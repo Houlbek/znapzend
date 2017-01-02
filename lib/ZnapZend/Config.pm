@@ -122,6 +122,11 @@ my $checkBackupSets = sub {
                 #check if mbuffer size is valid
                 $backupSet->{mbuffer_size} =~ /^\d+[bkMG%]?$/
                     or die "ERROR: mbuffer size '" . $backupSet->{mbuffer_size} . "' invalid\n";
+                #check if mbuffer rate limit for read/write is valid (if not, we set 0 = unlimited)
+                $backupSet->{mbuffer_readlimit} =~ /^\d+[bkMG%]?$/
+                    or $backupSet->{mbuffer_readlimit} = 0;
+                $backupSet->{mbuffer_writelimit} =~ /^\d+[bkMG%]?$/
+                    or $backupSet->{mbuffer_writelimit} = 0;
                 #check if port is numeric
                 $mbufferPort && do {
                     $mbufferPort =~ /^\d{1,5}$/ && int($mbufferPort) < 65535

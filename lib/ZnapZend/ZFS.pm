@@ -308,6 +308,8 @@ sub sendRecvSnapshots {
     my $dstDataSet = shift;
     my $mbuffer = shift;
     my $mbufferSize = shift;
+    my $mbufferReadLimit = shift;
+    my $mbufferWriteLimit = shift;
     my $snapFilter = $_[0] || qr/.*/;
     my $recvOpt = $self->recvu ? '-uF' : '-F';
 
@@ -344,8 +346,11 @@ sub sendRecvSnapshots {
     if ($remote && $mbufferPort && $mbuffer ne 'off'){
         my $recvPid;
 
+        my @mbufferExtraArgs = ();
+        $mbufferWriteLimit and push(@mbufferExtraArgs,('-R',$mbufferWriteLimit));
+
         my @recvCmd = $self->$buildRemoteRefArray($remote, [$mbuffer, @{$self->mbufferParam},
-            $mbufferSize, '-4', '-I', $mbufferPort], [@{$self->priv}, 'zfs', 'recv', $recvOpt, $dstDataSetPath]);
+            $mbufferSize, @mbufferExtraArgs, '-4', '-I', $mbufferPort], [@{$self->priv}, 'zfs', 'recv', $recvOpt, $dstDataSetPath]);
 
         my $cmd = $shellQuote->(@recvCmd);
 
@@ -381,7 +386,9 @@ sub sendRecvSnapshots {
                 $remote =~ s/^[^@]+\@//; #remove username if given
                 $self->zLog->debug("receive process on $remote spawned ($pid)");
 
-                push @cmd, [$mbuffer, @{$self->mbufferParam}, $mbufferSize,
+                my @mbufferExtraArgs = ();
+                $mbufferReadLimit and push(@mbufferExtraArgs,('-r',$mbufferReadLimit));
+                push @cmd, [$mbuffer, @{$self->mbufferParam}, $mbufferSize, @mbufferExtraArgs,
                     '-O', "$remote:$mbufferPort"];
 
                 $cmd = $shellQuote->(@cmd);
